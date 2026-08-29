@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheCheapest - Lowest Price Engine</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #090e17;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header Styling */
+        .site-header {
+            text-align: center;
+            padding: 30px 20px 20px;
+            background-color: #090e17;
+        }
+
+        .logo-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .header-title {
+            color: #17CDA4;
+            font-size: 3.2rem;
+            font-weight: 900;
+            letter-spacing: -1.2px;
+            margin: 4px 0;
+        }
+
+        .header-subtitle {
+            color: #7b93b7;
+            font-size: 0.98rem;
+            font-weight: 400;
+            margin-top: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        /* Search Section */
+        .search-card {
+            background: #131b2e;
+            border: 1px solid #1e2d4a;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 25px 0 35px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 220px;
+            position: relative;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #7b93b7;
+            margin-bottom: 8px;
+        }
+
+        .min-price-hint {
+            color: #17CDA4;
+            font-weight: 500;
+            font-size: 0.78rem;
+            margin-left: 4px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 14px 18px;
+            background: #090e17;
+            border: 1px solid #223454;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: #17CDA4;
+        }
+
+        .min-price-group {
+            width: 220px;
+            flex: none;
+        }
+
+        .btn-search {
+            background: #17CDA4;
+            color: #04241c;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            height: 50px;
+        }
+
+        .btn-search:hover {
+            background: #15be97;
+        }
+
+        .btn-search:active {
+            transform: scale(0.98);
+        }
+
+        /* Results Display */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-title {
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .results-count {
+            background: #132e27;
+            color: #17CDA4;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #17CDA4;
+        }
+
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .deal-card {
+            background: #131b2e;
+            border: 1px solid #1e2d4a;
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+
+        .deal-card.cheapest {
+            border: 2px solid #17CDA4;
+            background: #0e2023;
+        }
+
+        .cheapest-badge {
+            position: absolute;
+            top: -12px;
+            left: 18px;
+            background: #17CDA4;
+            color: #04241c;
+            font-size: 0.72rem;
+            font-weight: 900;
+            padding: 3px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .deal-info {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex: 1;
+        }
+
+        .deal-img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            background: #fff;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .deal-details h3 {
+            font-size: 1.05rem;
+            color: #ffffff;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .store-badge {
+            display: inline-block;
+            background: #1e2d4a;
+            color: #7b93b7;
+            font-size: 0.78rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .deal-action {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .deal-price {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .deal-price span {
+            font-size: 0.85rem;
+            color: #7b93b7;
+            margin-left: 4px;
+        }
+
+        .btn-view {
+            background: #2563eb;
+            color: #fff;
+            text-decoration: none;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-view:hover {
+            background: #1d4ed8;
+        }
+
+        .deal-card.cheapest .btn-view {
+            background: #17CDA4;
+            color: #04241c;
+        }
+
+        .deal-card.cheapest .btn-view:hover {
+            background: #15be97;
+        }
+
+        .loading-state, .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #7b93b7;
+        }
+
+        .spinner {
+            border: 3px solid #1e2d4a;
+            border-top: 3px solid #17CDA4;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header Section -->
+        <header class="site-header">
+            <div class="logo-wrapper">
+                <svg width="54" height="54" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="120" height="120" rx="60" fill="#090e17"/>
+                    <circle cx="60" cy="60" r="52" stroke="#17CDA4" stroke-width="2.5" stroke-dasharray="6 5" opacity="0.7"/>
+                    <path d="M85 34H57C44.85 34 35 43.85 35 56V64C35 76.15 44.85 86 57 86H85V70H59C55.69 70 53 67.31 53 64V56C53 52.69 55.69 50 59 50H85V34Z" fill="#17CDA4"/>
+                    <rect x="75" y="34" width="10" height="16" fill="#38BDF8"/>
+                    <rect x="75" y="70" width="10" height="16" fill="#38BDF8"/>
+                </svg>
+            </div>
+            <h1 class="header-title">TheCheapest</h1>
+            <p class="header-subtitle">Strictly Ranked Lowest Price Engine • Top 20 Direct Listings</p>
+        </header>
+
+        <!-- Search Form -->
+        <div class="search-card">
+            <form id="searchForm" class="search-form">
+                <div class="input-group">
+                    <label class="input-label" for="queryInput">Product Name</label>
+                    <input type="text" id="queryInput" class="input-field" placeholder="Search product name..." required>
+                </div>
+                <div class="input-group min-price-group">
+                    <label class="input-label" for="minPriceInput">Min AED <span class="min-price-hint">💡 Filter cases & covers</span></label>
+                    <input type="number" id="minPriceInput" class="input-field" placeholder="e.g. 200" min="0">
+                </div>
+                <button type="submit" class="btn-search">Search Deals</button>
+            </form>
+        </div>
+
+        <!-- Results Display Container -->
+        <div id="resultsContainer">
+            <div class="empty-state">
+                Enter a product query above to compare real-time prices across local shops and major online retailers.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const query = document.getElementById('queryInput').value.trim();
+            const minPrice = document.getElementById('minPriceInput').value.trim() || '0';
+            const container = document.getElementById('resultsContainer');
+
+            if (!query) return;
+
+            container.innerHTML = `
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Scraping and ranking lowest prices for "${query}"...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&min_price=${encodeURIComponent(minPrice)}`);
+                const deals = await response.json();
+
+                if (!deals || deals.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            No deals found matching "${query}". Try broadening your search query or lowering the minimum price.
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <div class="results-header">
+                        <h2 class="results-title">Results for "${query}"</h2>
+                        <span class="results-count">Showing Top ${deals.length} (Cheapest First)</span>
+                    </div>
+                    <div class="results-list">
+                `;
+
+                deals.forEach((deal, idx) => {
+                    const isCheapest = idx === 0;
+                    html += `
+                        <div class="deal-card ${isCheapest ? 'cheapest' : ''}">
+                            ${isCheapest ? '<div class="cheapest-badge">🏆 #1 Absolute Cheapest Deal</div>' : ''}
+                            <div class="deal-info">
+                                <img src="${deal.image}" class="deal-img" alt="Product Image" onerror="this.src='https://via.placeholder.com/80'">
+                                <div class="deal-details">
+                                    <h3>${deal.title}</h3>
+                                    <span class="store-badge">📍 ${deal.store}</span>
+                                </div>
+                            </div>
+                            <div class="deal-action">
+                                <div class="deal-price">${deal.price} <span>AED</span></div>
+                                <a href="${deal.link}" target="_blank" class="btn-view">View Product Page →</a>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                container.innerHTML = html;
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `
+                    <div class="empty-state" style="color: #ef4444;">
+                        An error occurred while fetching deals. Please ensure your Python backend is running properly.
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,9 +1,10 @@
 from flask import Flask, jsonify, request, send_from_directory, make_response, render_template_string
-from playwright.sync_api import sync_playwright
 import urllib.parse
 import json
 import os
 from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 
@@ -17,8 +18,8 @@ ANALYTICS_FILE = os.path.join(DATA_DIR, 'analytics.json')
 VISITORS_FILE = os.path.join(DATA_DIR, 'visitors.json')
 
 EXCLUDED_KEYWORDS = [
-    'case', 'cover', 'protector', 'glass', 'film', 'shield', 
-    'strap', 'holder', 'stand', 'cable', 'charger', 'skin', 
+    'case', 'cover', 'protector', 'glass', 'film', 'shield',
+    'strap', 'holder', 'stand', 'cable', 'charger', 'skin',
     'lens', 'armour', 'armor', 'sleeve', 'pouch',
     'tip', 'tips', 'hook', 'hooks', 'cap', 'caps', 'foam',
     'replacement', 'cleaning', 'cleaner', 'pen', 'lanyard',
@@ -27,6 +28,7 @@ EXCLUDED_KEYWORDS = [
     'mount', 'dock', 'organizer', 'dust', 'plug', 'keychain',
     'compatible with', 'designed for', 'suitable for', 'fits '
 ]
+
 
 def get_or_assign_visitor_id():
     """Reads or generates a sequential visitor ID (person_1, person_2, etc.)"""
@@ -84,7 +86,7 @@ def get_local_deals(query, min_price):
     """Loads manual local deals from local_deals.json using absolute path."""
     local_results = []
     file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'local_deals.json')
-    
+
     if not os.path.exists(file_path):
         return local_results
 
@@ -145,33 +147,32 @@ def search():
     encoded_query = urllib.parse.quote(query)
     amazon_url = f"https://www.amazon.ae/s?k={encoded_query}"
 
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-                viewport={'width': 1280, 'height': 800}
-            )
-            page = context.new_page()
-            page.goto(amazon_url, timeout=30000, wait_until="domcontentloaded")
-            
-            page.wait_for_selector('div[data-component-type="s-search-result"]', timeout=8000)
-            items = page.query_selector_all('div[data-component-type="s-search-result"]')
+        response = requests.get(amazon_url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            items = soup.select('div[data-component-type="s-search-result"]')
 
             for item in items:
                 try:
-                    title_el = item.query_selector('h2 a span') or item.query_selector('h2 span')
-                    price_el = item.query_selector('.a-price-whole') or item.query_selector('.a-price .a-offscreen')
-                    link_el = item.query_selector('h2 a.a-link-normal') or item.query_selector('a.a-link-normal')
-                    img_el = item.query_selector('img.s-image')
+                    title_el = item.select_one('h2 a span') or item.select_one('h2 span')
+                    price_el = item.select_one('.a-price-whole') or item.select_one('.a-price .a-offscreen')
+                    link_el = item.select_one('h2 a.a-link-normal') or item.select_one('a.a-link-normal')
+                    img_el = item.select_one('img.s-image')
 
                     if title_el and price_el:
-                        title = title_el.inner_text().strip()
+                        title = title_el.get_text().strip()
 
                         if any(kw in title.lower() for kw in EXCLUDED_KEYWORDS):
                             continue
 
-                        price_raw = price_el.inner_text().replace(',', '').replace('.', '').replace('AED', '').strip()
+                        price_raw = price_el.get_text().replace(',', '').replace('.', '').replace('AED', '').strip()
                         digits = ''.join(filter(str.isdigit, price_raw))
                         if not digits:
                             continue
@@ -180,7 +181,7 @@ def search():
                         if min_price > 0 and price < min_price:
                             continue
 
-                        href = link_el.get_attribute('href') if link_el else ''
+                        href = link_el.get('href', '') if link_el else ''
                         if href.startswith('/'):
                             link = f"https://www.amazon.ae{href}"
                         elif href.startswith('http'):
@@ -188,7 +189,7 @@ def search():
                         else:
                             link = amazon_url
 
-                        img_src = img_el.get_attribute('src') if img_el else ''
+                        img_src = img_el.get('src', '') if img_el else ''
 
                         deals.append({
                             "title": title,
@@ -199,8 +200,8 @@ def search():
                         })
                 except Exception:
                     continue
-
-            browser.close()
+        else:
+            print(f"Amazon returned status code: {response.status_code}")
     except Exception as e:
         print(f"Scraping error: {e}")
 
@@ -216,7 +217,7 @@ def search():
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     auth_pwd = request.args.get('password') or request.form.get('password')
-    
+
     if auth_pwd != ADMIN_PASSWORD:
         return render_template_string('''
             <!DOCTYPE html>
@@ -394,4 +395,5 @@ def add_local_deal():
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
